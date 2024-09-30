@@ -1,9 +1,27 @@
 import express from "express";
 import devRoutes from "./routes/ping";
+import mongoose from "mongoose";
+import { Sequelize } from "sequelize";
 import booksRoutes from "./routes/books";
 
 const app = express();
 const bdd = process.env.BDD || "mongodb";
+
+if (bdd === "postgresql") {
+    const sequelize = new Sequelize(`${process.env.POSTGREURL}`);
+
+    sequelize
+        .authenticate()
+        .then(() => console.log("Connexion à PostgreSQL réussie !"))
+        .catch(() => console.error("Connexion à PostgreSQL échouée !"));
+} else {
+    const mongoURI = process.env.MONGODBURL;
+
+    mongoose
+        .connect(`${mongoURI}`, {})
+        .then(() => console.log("Connexion à MongoDB réussie !"))
+        .catch(() => console.error("Connexion à MongoDB échouée !"));
+}
 
 app.use(express.json());
 
