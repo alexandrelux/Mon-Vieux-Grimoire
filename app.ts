@@ -3,6 +3,7 @@ import devRoutes from "./routes/ping";
 import mongoose from "mongoose";
 import { Sequelize } from "sequelize";
 import booksRoutes from "./routes/books";
+import userRoutes from "./routes/user";
 
 const app = express();
 const bdd = process.env.BDD || "mongodb";
@@ -40,5 +41,6 @@ app.use((req, res, next) => {
 
 app.use("/api", devRoutes);
 app.use("/api/books", booksRoutes);
+app.use("/api/auth", userRoutes);
 
 export default app;

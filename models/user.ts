@@ -3,7 +3,7 @@ import uniqueValidator from "mongoose-unique-validator";
 import { IUser } from "../types/user";
 
 const userSchema: Schema = new Schema({
-    email: { type: String, required: true, uniquel: true },
+    email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
 });
 
