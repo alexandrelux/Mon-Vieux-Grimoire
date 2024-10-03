@@ -13,7 +13,11 @@ export const createBook = async (
 ) => {
     delete req.body._id;
     const book = new Book({
-        ...req.body,
+        ...bookObject,
+        userId: req.auth.userId,
+        imageUrl: `${req.protocol}://${req.get("host")}/images/${
+            req.file.filename
+        }`,
     });
     try {
         await book.save();

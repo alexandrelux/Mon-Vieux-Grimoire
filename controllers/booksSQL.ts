@@ -12,8 +12,23 @@ export const createBookSQL = async (
     res: Response,
     next: NextFunction
 ) => {
-    delete req.body._id;
-    const book = Book.build(req.body);
+    const bookObject = JSON.parse(req.body.book);
+    delete bookObject._id;
+    delete bookObject.userId;
+
+    if (!req.auth || !req.file) {
+        return res
+            .status(400)
+            .json({ message: "Authentication data or file missing!" });
+    }
+
+    const book = Book.build({
+        ...bookObject,
+        userId: req.auth.userId,
+        imageUrl: `${req.protocol}://${req.get("host")}/images/${
+            req.file.filename
+        }`,
+    });
     try {
         await book.save();
         res.status(201).json({ message: "Book SQL enregistré !" });

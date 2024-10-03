@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { Sequelize } from "sequelize";
 import booksRoutes from "./routes/books";
 import userRoutes from "./routes/user";
+import path from "path";
 
 const app = express();
 const bdd = process.env.BDD || "mongodb";
@@ -42,5 +43,6 @@ app.use((req, res, next) => {
 app.use("/api", devRoutes);
 app.use("/api/books", booksRoutes);
 app.use("/api/auth", userRoutes);
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 export default app;

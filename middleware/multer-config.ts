@@ -5,6 +5,7 @@ const MIME_TYPES: { [key: string]: string } = {
     "image/jpg": "jpg",
     "image/jpeg": "jpg",
     "image/png": "png",
+    "image/webp": "webp",
 };
 
 // https://stackoverflow.com/questions/59097119/using-multer-diskstorage-with-typescript
