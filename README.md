@@ -1,13 +1,39 @@
 # Mon Vieux Grimoire
 
+## MongoDB
+
+**Show a collecton**
+
+```console
+docker exec -ti mongodb mongosh
+use admin
+db.auth('admin', 'password')
+use test
+db.users.find().pretty()
+```
+
+**Drop the a collecton**
+
+```console
+docker exec -ti mongodb mongosh
+use admin
+db.auth('admin', 'password')
+use test
+show collections
+db.books.deleteMany({})
+db.books.drop()
+db.books.find().pretty() # should be empty now
+```
+
 ## SQL
 
 Prerequise create table in the BDD
-(Warning "" needed for the case)
+
+> Warning "" needed for the casing of the column name
 
 ```console
-CREATE TABLE books (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE "Books" (
+    _id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "userId" VARCHAR(255) NOT NULL,
     "title" VARCHAR(255) NOT NULL,
     "author" VARCHAR(255) NOT NULL,
@@ -18,22 +44,18 @@ CREATE TABLE books (
     "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-```
 
-```console
-CREATE TABLE ratings (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE "Ratings" (
+    _id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "userId" VARCHAR(255) NOT NULL,
     "grade" INTEGER NOT NULL,
-    "bookId" INTEGER REFERENCES books(id) ON DELETE CASCADE,
+    "bookId" UUID REFERENCES "Books"(_id) ON DELETE CASCADE,
     "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-```
 
-```console
 CREATE TABLE "Users" (
-    "id" SERIAL PRIMARY KEY,
+    _id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "email" VARCHAR NOT NULL UNIQUE,
     "password" VARCHAR NOT NULL,
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

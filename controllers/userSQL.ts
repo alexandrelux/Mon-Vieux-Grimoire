@@ -53,9 +53,9 @@ export const loginSQL = async (
                     });
                 }
                 res.status(200).json({
-                    userId: user.dataValues.id,
+                    userId: user.dataValues._id,
                     token: jwt.sign(
-                        { userId: user.dataValues.id },
+                        { userId: user.dataValues._id },
                         `${process.env.SECRET}`,
                         { expiresIn: "24h" }
                     ),
