@@ -18,26 +18,26 @@ import {
     modifyBook,
 } from "../controllers/books";
 import { auth } from "../middleware/auth";
-import multer from "../middleware/multer-config";
+import { upload, convertToWebp } from "../middleware/multer-config";
 
 const router = express.Router();
 const bdd = process.env.BDD || "mongodb";
 
 if (bdd === "postgresql") {
-    router.post("/", auth, multer, createBookSQL);
+    router.post("/", auth, upload, convertToWebp, createBookSQL);
     router.post("/:id/rating", auth, createRatingSQL);
     router.get("/", getAllBookSQL);
     router.get("/bestrating/", getBestRatingBookSQL);
     router.get("/:id", getOneBookSQL);
-    router.put("/:id", auth, multer, modifyBookSQL);
+    router.put("/:id", auth, upload, convertToWebp, modifyBookSQL);
     router.delete("/:id", auth, deleteBookSQL);
 } else {
-    router.post("/", auth, multer, createBook);
+    router.post("/", auth, upload, convertToWebp, createBook);
     router.post("/:id/rating", auth, createRating);
     router.get("/", getAllBook);
     router.get("/bestrating/", getBestRatingBook);
     router.get("/:id", getOneBook);
-    router.put("/:id", auth, multer, modifyBook);
+    router.put("/:id", auth, upload, convertToWebp, modifyBook);
     router.delete("/:id", auth, deleteBook);
 }
 

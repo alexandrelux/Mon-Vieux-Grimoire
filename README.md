@@ -1,5 +1,15 @@
 # Mon Vieux Grimoire
 
+**Prérequis**  
+Modifier le .env afin de changer la MONGODBURL
+avec soit l'url de la BDD Atlas soit l'url de la BDD local.
+
+Puis lancer le projet avec
+
+```console
+npm run dev
+```
+
 ## MongoDB
 
 **Show a collecton**

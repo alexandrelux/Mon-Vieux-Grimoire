@@ -1,11 +1,16 @@
 import multer from "multer";
-import { Request } from "express";
+import sharp from "sharp";
+import path from "path";
+import fs from "fs";
+import { Request, Response, NextFunction } from "express";
+import { removeLastDot } from "../utils/functions";
 
 const MIME_TYPES: { [key: string]: string } = {
     "image/jpg": "jpg",
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
+    "image/avif": "avif",
 };
 
 // https://stackoverflow.com/questions/59097119/using-multer-diskstorage-with-typescript
@@ -18,17 +23,54 @@ const storage = multer.diskStorage({
         file: Express.Multer.File,
         callback: DestinationCallback
     ) => {
-        callback(null, "images");
+        callback(null, "tmp");
     },
     filename: (
         req: Request,
         file: Express.Multer.File,
         callback: FileNameCallback
     ) => {
-        const name = file.originalname.split(" ").join("_");
+        const nameWithoutExtension = removeLastDot(file.originalname);
+        const name = nameWithoutExtension.split(" ").join("_");
         const extension = MIME_TYPES[file.mimetype];
-        callback(null, `${name}${Date.now()}.${extension}`);
+        callback(null, `${name}-${Date.now()}.${extension}`);
     },
 });
 
-export default multer({ storage }).single("image");
+const upload = multer({ storage }).single("image");
+
+const convertToWebp = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    if (req.file) {
+        const inputPath = req.file.path;
+        const fileNameWithoutExtension = removeLastDot(req.file.filename);
+        const outputPath = path.join(
+            "images",
+            `${fileNameWithoutExtension}.webp`
+        );
+
+        try {
+            await sharp(inputPath)
+                .resize(800) // .resize(largeur, hauteur) or .resize(null, h)
+                .toFormat("webp")
+                .toFile(outputPath);
+
+            fs.unlinkSync(inputPath);
+
+            req.file.path = outputPath;
+            req.file.filename = path.basename(outputPath);
+
+            next();
+        } catch (err) {
+            next(err);
+        }
+    } else {
+        // Ce n'est pas forcément une erreur la modification d'un image n'est pas mandatory lors du PUT
+        next();
+    }
+};
+
+export { upload, convertToWebp };

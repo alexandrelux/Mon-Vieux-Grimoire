@@ -181,6 +181,14 @@ export const modifyBookSQL = async (
 
         if (book.dataValues.userId == req.auth.userId) {
             try {
+                // Si nouvelle image supprimer l'ancienne
+                if (req.file) {
+                    const filename =
+                        book.dataValues.imageUrl.split("/images/")[1];
+                    await fs.unlink(`images/${filename}`);
+                }
+
+                // Persist on BDD
                 await book.update({
                     ...bookObject,
                 });
