@@ -40,9 +40,9 @@ export const createBookSQL = async (
             bookId: book.dataValues._id,
         });
 
-        res.status(201).json({ message: "Book SQL enregistré !" });
+        return res.status(201).json({ message: "Book SQL enregistré !" });
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -64,7 +64,7 @@ export const createRatingSQL = async (
 
         // Vérifie si le rating est valide
         if (!checkGrade(rating)) {
-            res.status(400).json({
+            return res.status(400).json({
                 message: "Rating incorrect should be >=0 ou <=5 !",
             });
         }
@@ -105,9 +105,9 @@ export const createRatingSQL = async (
         const bookUpdated = await Book.findByPk(bookId, {
             include: [{ model: Rating, as: "ratings" }],
         });
-        res.status(201).json(bookUpdated);
+        return res.status(201).json(bookUpdated);
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -120,9 +120,9 @@ export const getAllBookSQL = async (
         const books = await Book.findAll({
             include: [{ model: Rating, as: "ratings" }],
         });
-        res.status(200).json(books);
+        return res.status(200).json(books);
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -135,9 +135,9 @@ export const getOneBookSQL = async (
         const book = await Book.findByPk(req.params.id, {
             include: [{ model: Rating, as: "ratings" }],
         });
-        res.status(200).json(book);
+        return res.status(200).json(book);
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -152,9 +152,9 @@ export const getBestRatingBookSQL = async (
             return item.dataValues as IBook;
         });
         const bestRatingBooks = bestRatingBookFromData(myBook);
-        res.status(200).json(bestRatingBooks);
+        return res.status(200).json(bestRatingBooks);
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -192,15 +192,15 @@ export const modifyBookSQL = async (
                 await book.update({
                     ...bookObject,
                 });
-                res.status(200).json({ message: "Objet modifié!" });
+                return res.status(200).json({ message: "Objet modifié!" });
             } catch (error) {
-                res.status(401).json({ error });
+                return res.status(401).json({ error });
             }
         } else {
-            res.status(401).json({ message: "Not authorized" });
+            return res.status(401).json({ message: "Not authorized" });
         }
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -227,21 +227,21 @@ export const deleteBookSQL = async (
                     },
                 });
                 if (result === 0) {
-                    res.status(200).json({
+                    return res.status(200).json({
                         acknowledged: true,
                         deletedCount: 0,
                     });
                 } else {
-                    res.status(200).json({
+                    return res.status(200).json({
                         acknowledged: true,
                         deletedCount: 1,
                     });
                 }
             }
         } else {
-            res.status(400).json({ message: "Book not found" });
+            return res.status(400).json({ message: "Book not found" });
         }
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };

@@ -30,9 +30,9 @@ export const createBook = async (
     });
     try {
         await book.save();
-        res.status(201).json({ message: "Book enregistré !" });
+        return res.status(201).json({ message: "Book enregistré !" });
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -54,7 +54,7 @@ export const createRating = async (
 
         // Vérifie si le rating est valide
         if (!checkGrade(rating)) {
-            res.status(400).json({
+            return res.status(400).json({
                 message: "Rating incorrect should be >=0 et <=5  !",
             });
         }
@@ -69,6 +69,7 @@ export const createRating = async (
         const bookCommentedByUser = book.ratings.find(
             (item) => item.userId === userId
         );
+
         if (bookCommentedByUser) {
             return res.status(200).json({ message: "Livre déjà noté" });
         }
@@ -87,9 +88,9 @@ export const createRating = async (
         await book.save();
 
         // Renvoie le livre
-        res.status(201).json(book);
+        return res.status(201).json(book);
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -100,9 +101,9 @@ export const getAllBook = async (
 ) => {
     try {
         const books = await Book.find();
-        res.status(200).json(books);
+        return res.status(200).json(books);
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -113,9 +114,9 @@ export const getOneBook = async (
 ) => {
     try {
         const book = await Book.findById({ _id: req.params.id });
-        res.status(200).json(book);
+        return res.status(200).json(book);
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -127,9 +128,9 @@ export const getBestRatingBook = async (
     try {
         const books = await Book.find();
         const bestRatingBooks = bestRatingBookFromData(books);
-        res.status(200).json(bestRatingBooks);
+        return res.status(200).json(bestRatingBooks);
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -167,15 +168,15 @@ export const modifyBook = async (
                     { _id: req.params.id },
                     { ...bookObject, _id: req.params.id }
                 );
-                res.status(200).json({ message: "Objet modifié!" });
+                return res.status(200).json({ message: "Objet modifié!" });
             } catch (error) {
-                res.status(401).json({ error });
+                return res.status(401).json({ error });
             }
         } else {
-            res.status(401).json({ message: "Not authorized" });
+            return res.status(401).json({ message: "Not authorized" });
         }
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };
 
@@ -197,14 +198,14 @@ export const deleteBook = async (
                 await fs.unlink(`images/${filename}`);
                 // Delete Book on DB
                 await Book.deleteOne({ _id: req.params.id });
-                res.status(200).json(book);
+                return res.status(200).json(book);
             } else {
-                res.status(401).json({ message: "Unauthorized" });
+                return res.status(401).json({ message: "Unauthorized" });
             }
         } else {
-            res.status(400).json({ message: "Book not found" });
+            return res.status(400).json({ message: "Book not found" });
         }
     } catch (error) {
-        res.status(400).json({ error });
+        return res.status(400).json({ error });
     }
 };

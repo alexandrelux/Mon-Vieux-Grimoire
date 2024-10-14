@@ -18,6 +18,6 @@ export const auth = (req: Request, res: Response, next: NextFunction) => {
         req.auth = { userId };
         next();
     } catch (error) {
-        res.status(401).json({ error });
+        return res.status(401).json({ error });
     }
 };

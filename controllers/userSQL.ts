@@ -17,12 +17,12 @@ export const signupSQL = async (
         });
         try {
             await user.save();
-            res.status(201).json({ message: "Utilisateur créé !" });
+            return res.status(201).json({ message: "Utilisateur créé !" });
         } catch (error) {
-            res.status(400).json({ error });
+            return res.status(400).json({ error });
         }
     } catch (error) {
-        res.status(500).json({ error });
+        return res.status(500).json({ error });
     }
 };
 
@@ -52,7 +52,7 @@ export const loginSQL = async (
                         message: "Paire login/mot de passe incorrecte",
                     });
                 }
-                res.status(200).json({
+                return res.status(200).json({
                     userId: user.dataValues._id,
                     token: jwt.sign(
                         { userId: user.dataValues._id },
@@ -61,10 +61,10 @@ export const loginSQL = async (
                     ),
                 });
             } catch (error) {
-                res.status(500).json({ error });
+                return res.status(500).json({ error });
             }
         }
     } catch (error) {
-        res.status(500).json({ error });
+        return res.status(500).json({ error });
     }
 };
