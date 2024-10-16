@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { Book, Rating } from "../models/bookSQL";
-import { IBook } from "../types/book";
+import { IBook, IRating } from "../types/book";
 import {
     average,
     bestRatingBookFromData,
@@ -13,24 +13,50 @@ export const createBookSQL = async (
     res: Response,
     next: NextFunction
 ) => {
-    const bookObject = JSON.parse(req.body.book);
-    delete bookObject._id;
-    delete bookObject.userId;
-
-    if (!req.auth || !req.file) {
-        return res
-            .status(400)
-            .json({ message: "Authentication data or file missing!" });
-    }
-
-    const book = Book.build({
-        ...bookObject,
-        userId: req.auth.userId,
-        imageUrl: `${req.protocol}://${req.get("host")}/images/${
-            req.file.filename
-        }`,
-    });
     try {
+        const bookObject = JSON.parse(req.body.book);
+        delete bookObject._id;
+        delete bookObject.userId;
+
+        if (!req.auth || !req.file) {
+            return res
+                .status(400)
+                .json({ message: "Authentication data or file missing!" });
+        }
+
+        // Verification la taille de l'array, doit être de 1 à la création
+        const ratings: IRating[] = bookObject.ratings;
+        if (ratings.length != 1) {
+            return res.status(400).json({
+                message: "Error rating tables incorrect",
+            });
+        } else {
+            // Vérifie si le user est valide
+            if (ratings[0].userId != req.auth.userId) {
+                return res.status(403).json({ message: "Not authorized" });
+            }
+            // Vérifie si le rating est valide
+            if (!checkGrade(ratings[0].grade)) {
+                return res.status(400).json({
+                    message: "Rating incorrect should be >=0 et <=5  !",
+                });
+            }
+        }
+
+        // Calcule l'averageRating
+        const bookRatings = ratings.map((item) => item.grade);
+        const averageRating = average(bookRatings);
+
+        // Persist on the BDD
+        const book = Book.build({
+            ...bookObject,
+            userId: req.auth.userId,
+            averageRating: averageRating,
+            imageUrl: `${req.protocol}://${req.get("host")}/images/${
+                req.file.filename
+            }`,
+        });
+
         await book.save();
 
         // Crée un nouveau rating
@@ -135,6 +161,9 @@ export const getOneBookSQL = async (
         const book = await Book.findByPk(req.params.id, {
             include: [{ model: Rating, as: "ratings" }],
         });
+        if (book == null) {
+            return res.status(404).json("Not found");
+        }
         return res.status(200).json(book);
     } catch (error) {
         return res.status(400).json({ error });
@@ -163,17 +192,21 @@ export const modifyBookSQL = async (
     res: Response,
     next: NextFunction
 ) => {
-    const bookObject = req.file
-        ? {
-              ...JSON.parse(req.body.book),
-              imageUrl: `${req.protocol}://${req.get("host")}/images/${
-                  req.file.filename
-              }`,
-          }
-        : req.body;
-    delete bookObject._userId;
-
     try {
+        const bookObject = req.file
+            ? {
+                  ...JSON.parse(req.body.book),
+                  imageUrl: `${req.protocol}://${req.get("host")}/images/${
+                      req.file.filename
+                  }`,
+              }
+            : req.body;
+        delete bookObject.userId;
+
+        // Il n’est pas possible de modifier une note.
+        delete bookObject.ratings;
+        delete bookObject.averageRating;
+
         const book = await Book.findByPk(req.params.id);
         if (!book || !req.auth) {
             return res.status(500).json({ message: "Something goes wrong!" });
@@ -197,7 +230,7 @@ export const modifyBookSQL = async (
                 return res.status(401).json({ error });
             }
         } else {
-            return res.status(401).json({ message: "Not authorized" });
+            return res.status(403).json({ message: "Not authorized" });
         }
     } catch (error) {
         return res.status(400).json({ error });
@@ -212,7 +245,7 @@ export const deleteBookSQL = async (
     try {
         const book = await Book.findByPk(req.params.id);
         if (!book || !req.auth) {
-            return res.status(500).json({ message: "Something goes wrong!" });
+            return res.status(401).json({ message: "Something goes wrong!" });
         }
 
         if (book) {
@@ -237,9 +270,11 @@ export const deleteBookSQL = async (
                         deletedCount: 1,
                     });
                 }
+            } else {
+                return res.status(403).json({ message: "Unauthorized" });
             }
         } else {
-            return res.status(400).json({ message: "Book not found" });
+            return res.status(404).json({ message: "Book not found" });
         }
     } catch (error) {
         return res.status(400).json({ error });

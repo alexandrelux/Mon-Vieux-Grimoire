@@ -1,15 +1,15 @@
 export interface IBook {
     userId: string;
     title: string;
-    author: String;
+    author: string;
     imageUrl: string;
     year: number;
     genre: string;
-    ratings: [
-        {
-            userId: string;
-            grade: 0 | 1 | 2 | 3 | 4 | 5;
-        }
-    ];
+    ratings: IRating[];
     averageRating: number;
+}
+
+export interface IRating {
+    userId: string;
+    grade: 0 | 1 | 2 | 3 | 4 | 5;
 }

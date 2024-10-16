@@ -1,34 +1,58 @@
 import { Request, Response, NextFunction } from "express";
 import Book from "../models/book";
-import {
-    average,
-    bestRatingBookFromData,
-    checkGrade,
-} from "../utils/functions";
+import { average, checkGrade } from "../utils/functions";
 import { promises as fs } from "fs";
+import { IRating } from "../types/book";
 
 export const createBook = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    const bookObject = JSON.parse(req.body.book);
-    delete bookObject._id;
-    delete bookObject.userId;
-
-    if (!req.auth || !req.file) {
-        return res
-            .status(400)
-            .json({ message: "Authentication data or file missing!" });
-    }
-    const book = new Book({
-        ...bookObject,
-        userId: req.auth.userId,
-        imageUrl: `${req.protocol}://${req.get("host")}/images/${
-            req.file.filename
-        }`,
-    });
     try {
+        const bookObject = JSON.parse(req.body.book);
+        delete bookObject._id;
+        delete bookObject.userId;
+
+        if (!req.auth || !req.file) {
+            return res
+                .status(400)
+                .json({ message: "Authentication data or file missing!" });
+        }
+
+        // Verification la taille de l'array, doit être de 1 à la création
+        const ratings: IRating[] = bookObject.ratings;
+        if (ratings.length != 1) {
+            return res.status(400).json({
+                message: "Error rating tables incorrect",
+            });
+        } else {
+            // Vérifie si le user est valide
+            if (ratings[0].userId != req.auth.userId) {
+                return res.status(403).json({ message: "Not authorized" });
+            }
+            // Vérifie si le rating est valide
+            if (!checkGrade(ratings[0].grade)) {
+                return res.status(400).json({
+                    message: "Rating incorrect should be >=0 et <=5  !",
+                });
+            }
+        }
+
+        // Calcule l'averageRating
+        const bookRatings = ratings.map((item) => item.grade);
+        const averageRating = average(bookRatings);
+
+        // Persist on the BDD
+        const book = new Book({
+            ...bookObject,
+            userId: req.auth.userId,
+            averageRating: averageRating,
+            imageUrl: `${req.protocol}://${req.get("host")}/images/${
+                req.file.filename
+            }`,
+        });
+
         await book.save();
         return res.status(201).json({ message: "Book enregistré !" });
     } catch (error) {
@@ -114,6 +138,9 @@ export const getOneBook = async (
 ) => {
     try {
         const book = await Book.findById({ _id: req.params.id });
+        if (book == null) {
+            return res.status(404).json("Not found");
+        }
         return res.status(200).json(book);
     } catch (error) {
         return res.status(400).json({ error });
@@ -126,8 +153,9 @@ export const getBestRatingBook = async (
     next: NextFunction
 ) => {
     try {
-        const books = await Book.find();
-        const bestRatingBooks = bestRatingBookFromData(books);
+        const bestRatingBooks = await Book.find()
+            .sort({ averageRating: -1 })
+            .limit(3); // plus simple et performant car cela évite de parcour tous les livres de la BDD
         return res.status(200).json(bestRatingBooks);
     } catch (error) {
         return res.status(400).json({ error });
@@ -139,20 +167,24 @@ export const modifyBook = async (
     res: Response,
     next: NextFunction
 ) => {
-    const bookObject = req.file
-        ? {
-              ...JSON.parse(req.body.book),
-              imageUrl: `${req.protocol}://${req.get("host")}/images/${
-                  req.file.filename
-              }`,
-          }
-        : req.body;
-    delete bookObject._userId;
-
     try {
+        const bookObject = req.file
+            ? {
+                  ...JSON.parse(req.body.book),
+                  imageUrl: `${req.protocol}://${req.get("host")}/images/${
+                      req.file.filename
+                  }`,
+              }
+            : req.body;
+        delete bookObject.userId;
+
+        // Il n’est pas possible de modifier une note.
+        delete bookObject.ratings;
+        delete bookObject.averageRating;
+
         const book = await Book.findOne({ _id: req.params.id });
         if (!book || !req.auth) {
-            return res.status(500).json({ message: "Something goes wrong!" });
+            return res.status(401).json({ message: "Something goes wrong!" });
         }
 
         if (book.userId == req.auth.userId) {
@@ -170,10 +202,10 @@ export const modifyBook = async (
                 );
                 return res.status(200).json({ message: "Objet modifié!" });
             } catch (error) {
-                return res.status(401).json({ error });
+                return res.status(500).json({ error });
             }
         } else {
-            return res.status(401).json({ message: "Not authorized" });
+            return res.status(403).json({ message: "Not authorized" }); // 403 != 401
         }
     } catch (error) {
         return res.status(400).json({ error });
@@ -200,10 +232,10 @@ export const deleteBook = async (
                 await Book.deleteOne({ _id: req.params.id });
                 return res.status(200).json(book);
             } else {
-                return res.status(401).json({ message: "Unauthorized" });
+                return res.status(403).json({ message: "Unauthorized" });
             }
         } else {
-            return res.status(400).json({ message: "Book not found" });
+            return res.status(404).json({ message: "Book not found" });
         }
     } catch (error) {
         return res.status(400).json({ error });

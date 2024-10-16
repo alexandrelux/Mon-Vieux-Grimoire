@@ -5,7 +5,7 @@ import fs from "fs";
 import { Request, Response, NextFunction } from "express";
 import { removeLastDot } from "../utils/functions";
 
-const MIME_TYPES: { [key: string]: string } = {
+const MIME_TYPES: { [key: string]: string | undefined } = {
     "image/jpg": "jpg",
     "image/jpeg": "jpg",
     "image/png": "png",
@@ -33,7 +33,11 @@ const storage = multer.diskStorage({
         const nameWithoutExtension = removeLastDot(file.originalname);
         const name = nameWithoutExtension.split(" ").join("_");
         const extension = MIME_TYPES[file.mimetype];
-        callback(null, `${name}-${Date.now()}.${extension}`);
+        if (extension !== undefined) {
+            callback(null, `${name}-${Date.now()}.${extension}`);
+        } else {
+            callback(new Error("Unsupported file type"), "");
+        }
     },
 });
 
